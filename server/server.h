@@ -26,19 +26,24 @@
  *global variables
  */
 
-struct user 
+typedef struct 
 {
 	char username[USERNAME_LEN];
 	char password[PASSWORD_LEN];
 	char status;
 	int socket;
-} ls[] = {"Haibara", "the", OFFLINE, -1,
+} user; 
+
+user ls[] = {"Haibara", "the", OFFLINE, -1,
 	"Conan", "quick", OFFLINE, -1,
 	"Sonoko", "brown", OFFLINE, -1,
 	"Kogoro", "fox", OFFLINE, -1,
 	"Vermouth", "jumps", OFFLINE, -1,
 	"Camel", "over", OFFLINE, -1};
 
+int user_count = 6;
+
+int append_usr(const char username[], const char password[]);
 struct user * find_by_username(const char username[]);
 char validate(struct user *p, char password[], int ns);
 void logoff(struct user *p);

@@ -37,5 +37,8 @@
 #define SENT 'S'
 #define FILE_RCV 'r'
 
+#define ALREADY_EXIST 'a'
+#define REG 'R'
+
 void extract_path(char path[], const char buf[]);
 void extract_username(char username[], const char buf[]);

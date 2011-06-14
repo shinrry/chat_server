@@ -87,7 +87,7 @@ int connect_init()
     return ns;
 }
 
-int main()
+int main(int argc, const char *argv[])
 {
     int n, active_socket, len;
     char buf[BUF], message[BUF];
@@ -97,7 +97,7 @@ int main()
     extern int fd;
 
     active_socket = connect_init();
-    tmp = login(active_socket, "Conan", "quick");
+    tmp = login(active_socket, argv[1], argv[2]);
 
     memset(message, 0, sizeof(message));
 
@@ -132,6 +132,6 @@ char login(int socket, const char username[], const char password[])
 void talk(int socket, const char target_username[], const char content[])
 {
     char message[MSG];
-    encap_msg(message, TALK, username, password);
+    encap_msg(message, TALK, target_username, content);
     send(socket, message, strlen(message), 0);
 }

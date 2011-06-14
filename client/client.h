@@ -20,10 +20,9 @@
 
 #define HOST_LEN 64
 
-void set_echo(char flag, char message[]);
-char rcv_file(int active_socket);
 void clientd(int active_socket);
-char send_file(const char buf[], int socket);
+int connect_init();
+char login(int socket, const char username[], const char password[]);
 
 /*
  *global varabiles

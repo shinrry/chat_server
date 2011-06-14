@@ -21,7 +21,7 @@ public class User extends JFrame{
 	}
 	
 	public static void main(String[] args){
-		//Éè¼ÆµÇÂ¼½çÃæ
+		//è®¾è®¡ç™»å½•ç•Œé¢
 		final JFrame login = new JFrame("Login");
 		login.setSize(300,200);
 		login.setResizable(false);
@@ -53,7 +53,7 @@ public class User extends JFrame{
 		
 		login.setVisible(true);
 		
-		//±à¼­È·ÈÏ°´Å¥ÊÂ¼ş
+		//ç¼–è¾‘ç¡®è®¤æŒ‰é’®äº‹ä»¶
 		btnCon.addActionListener(new ActionListener() {
 			
 			@Override
@@ -61,7 +61,7 @@ public class User extends JFrame{
 				// TODO Auto-generated method stub
 				String msg = "hello";
 				String inputUsername = tfUser.getText().toLowerCase();
-				//ÓÃpfPwd.getPassword()ÓĞÎÊÌâ£¿
+				//ç”¨pfPwd.getPassword()æœ‰é—®é¢˜ï¼Ÿ
 				String inputPassword = pfPwd.getText().trim();
 				
 				if(inputUsername.isEmpty()||inputPassword.isEmpty()){
@@ -82,7 +82,7 @@ public class User extends JFrame{
 					friendList.setLocation(500, 250);
 					friendList.setResizable(false);
 					
-					//ÅóÓÑÁĞ±íµÄ´¦Àí
+					//æœ‹å‹åˆ—è¡¨çš„å¤„ç†
 					
 				}
 				
@@ -91,7 +91,7 @@ public class User extends JFrame{
 			}
 		});
 		
-		//±à¼­×¢²á°´Å¥ÊÂ¼ş
+		//ç¼–è¾‘æ³¨å†ŒæŒ‰é’®äº‹ä»¶
 		btnReg.addActionListener(new ActionListener() {
 			
 			@Override
@@ -130,14 +130,14 @@ public class User extends JFrame{
 				regist.add(p3);
 				regist.add(p4);
 				
-				//ÒòÎªÈ¡Ïû×¢²á¶ø¹Ø±Õ×¢²áÒ³ÃæÊ±»Øµ½µÇÂ¼Ò³Ãæ
+				//å› ä¸ºå–æ¶ˆæ³¨å†Œè€Œå…³é—­æ³¨å†Œé¡µé¢æ—¶å›åˆ°ç™»å½•é¡µé¢
 				regist.addWindowListener(new java.awt.event.WindowAdapter() {
 					   public void windowClosing(java.awt.event.WindowEvent e) {
 					    login.setVisible(true);
 					    }
 					  }); 
 				
-				//±à¼­×¢²áÈ·ÈÏ°´Å¥ÊÂ¼ş
+				//ç¼–è¾‘æ³¨å†Œç¡®è®¤æŒ‰é’®äº‹ä»¶
 				b.addActionListener(new ActionListener() {
 					
 					@Override
@@ -170,7 +170,7 @@ public class User extends JFrame{
 			}
 		});
 		
-		//±à¼­È¡Ïû°´Å¥ÊÂ¼ş
+		//ç¼–è¾‘å–æ¶ˆæŒ‰é’®äº‹ä»¶
 		btnCancel.addActionListener(new ActionListener() {
 			
 			@Override

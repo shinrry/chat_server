@@ -21,24 +21,39 @@
 #define USERNAME_LEN 21
 #define PASSWORD_LEN 21
 #define PATH 50
-#define MSG 50
+#define MSG 100
 #define FILE_SIZE 10240 
 
-#define OFFLINE 'f'
-#define NOT_EXIST 'n'
-#define WRONG_PASSWORD 'w'
-#define ONLINE 'o'
-#define TOO_LONG 'l'
-#define TAR_OFFLINE 't'
-#define FILE_TOO_LONG 'e'
 #define FAIL_SEND 's'
 #define ACCPET 'A'
 #define ACCEPTED 'y'
 #define SENT 'S'
 #define FILE_RCV 'r'
 
+#define REGISTER 'R'
+#define REGISTER_YES 'E'
 #define ALREADY_EXIST 'a'
-#define REG 'R'
 
-void extract_path(char path[], const char buf[]);
+#define LOGIN 'L'
+#define LOGIN_YES 'f'
+#define OFFLINE 'f'
+#define NOT_EXIST 'n'
+#define WRONG_PASSWORD 'w'
+#define ONLINE 'o'
+
+#define LOGOFF 'Q'
+
+#define TALK 'T'
+#define TALK_YES 'A'
+#define TALK_NO 't'
+
+#define BROADCAST_JOIN 'J'
+#define BROADCAST_DEP 'D'
+
+#define LIST 'I'
+
+
 void extract_username(char username[], const char buf[]);
+void extract_second(char second[], const char buf[]);
+void encap_usrname(char buf[], char op, const char username[]);
+void encap_msg(char buf[], char op, const char username[], const char msg[]);

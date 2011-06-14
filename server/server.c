@@ -25,25 +25,6 @@
 
 #include "server.h"
 
-int append_usr(const char username[], const char password[])
-{
-    extern user ls[];
-    extern int user_count;
-    user *p = NULL;
-
-    p = find_by_username(username);
-    if (NULL == p) {
-        return ALREADY_EXIST;
-    }
-
-    ls[user_count].status = OFFLINE;
-    ls[user_count].socket = -1;
-    strcpy(ls[user_count].username, username);
-    strcpy(ls[user_count].password, password);
-    user_count++;
-    return 0;
-}
-
 /*
  * @brief find the user according to username
  *
@@ -51,16 +32,14 @@ int append_usr(const char username[], const char password[])
  *
  * @return the pointer
  */
-struct user * find_by_username(const char username[])
+user * find_by_username(const char username[])
 {
-    struct user *p = NULL;
+    user *p = NULL;
     int i;
-    extern struct user ls[];
+    extern user ls[];
 
-    for (i = 0; i < USER_CNT; i++)
-    {
-        if (0 == strcmp(username, ls[i].username))
-        {
+    for (i = 0; i < user_count; i++) {
+        if (0 == strcmp(username, ls[i].username)) {
             p = &(ls[i]);
             break;
         }
@@ -77,7 +56,7 @@ struct user * find_by_username(const char username[])
  *
  * @return 
  */
-char validate(struct user *p, char password[], int ns)
+char validate(user *p, char password[], int ns)
 {
     if (0 == strcmp(password, p->password)) /*password correct*/ 
     {
@@ -103,11 +82,12 @@ char validate(struct user *p, char password[], int ns)
  *
  * @param p the pointer pointing to that user
  */
-void logoff(struct user *p)
+void logoff(user *p, int socket)
 {
     p->status = OFFLINE;
     p->socket = -1;
-    broadcast(DEPARTURE, p);
+    broadcast(BROADCAST_DEP, p);
+    close(socket);
 }
 
 /**
@@ -115,20 +95,14 @@ void logoff(struct user *p)
  *
  * @param buf[] result string
  */
-void list(char buf[])
+void list(char buf[], int socket)
 {
     int i, j, offset = 0;
-    extern struct user ls[];
+    extern user ls[];
 
     memset(buf, 0, sizeof(buf));
-    for (i = 0; i < USER_CNT; i++)
-    {
-        if(ONLINE == ls[i].status)
-        {
-            for (j = 0; j < 3; j++)
-            {
-                buf[offset++] = '*';
-            }
+    for (i = 0; i < user_count; i++) {
+        if(ONLINE == ls[i].status) {
             buf[offset++] = ' ';
             for (j = 0; j < strlen(ls[i].username); j++)
             {
@@ -136,6 +110,10 @@ void list(char buf[])
             }
             buf[offset++] = '\n';
         }
+    }
+    if(send(socket, buf, strlen(buf), 0) < 0) {
+        perror("send");
+        exit(1);
     }
 }
 
@@ -145,34 +123,16 @@ void list(char buf[])
  * @param flag indicating whether logging in or logging off occurs
  * @param p the pointer pointing to the user
  */
-void broadcast(int flag, struct user *p)
+void broadcast(char flag, user *p)
 {
-    char message[MSG] = "*** ";
+    char message[MSG];
     int i;
-    extern struct user ls[];
+    extern user ls[];
 
-    strcat(message, p->username);
-    switch (flag)
-    {
-        case JOIN:
-            strcat(message, " has joined.\n");
-            break;
-        case DEPARTURE:
-            strcat(message, " has departed.\n");
-            break;
-        default:
-            perror("internal error");
-            exit(1);
-    }
-    for (i = 0; i < USER_CNT; i++)
-    {
-        if(-1 != ls[i].socket)
-        {
-            if(send(ls[i].socket, message, strlen(message), 0) < 0)
-            {
-                perror("send");
-                exit(1);
-            }
+    encap_usrname(message, flag, p->username);
+    for (i = 0; i < user_count; i++) {
+        if(-1 != ls[i].socket) {
+            send(ls[i].socket, message, strlen(message), 0);
         }
     }
 }
@@ -184,78 +144,40 @@ void broadcast(int flag, struct user *p)
  */
 void serverd(int ns)
 {
-    char buf[BUF], username[USERNAME_LEN], password[PASSWORD_LEN];
-    int len, cnt = 0;
-    struct user *p = NULL;
-
-    memset(username, 0, sizeof(username));
-    memset(password, 0, sizeof(password));
+    char buf[BUF];
+    int len;
+    user *p = NULL;
 
     while ((len = recv(ns, buf, sizeof(buf), 0)) > 0)
     {
-        if (0 == cnt) /*receive username*/
-        {
-            cnt++;
-            strncpy(username, buf, strlen(buf) - 1);
-            p = find_by_username(username);
+        switch (buf[0]) {
+            case REGISTER:
+                append_usr(buf, ns);
+                break;
+            case LOGIN:
+                login(buf, ns);
+                break;
+            case LOGOFF:
+                logoff(p, ns);
+                break;
+            case LIST:
+                list(buf, ns);
+                break;
+            case TALK:
+                talk(buf, ns);
         }
-        else if (1 == cnt) /*receive password*/
-        {
-            cnt++;
-            strncpy(password, buf, strlen(buf) - 1);
 
-            if (NULL == p) /*user not found*/ 
-            {
-                buf[0] = NOT_EXIST;
-            }
-            else
-            {
-                buf[0] = validate(p, password, ns);
-            }
-            if (send(ns, buf, 1, 0) < 0) /*send a single byte*/
-            {
-                perror("send");
-                exit(1);
-            }
-            broadcast(JOIN, p);
-        }
-        else if (0 == strcmp("!logoff\n", buf)) /*receives 'logoff' command*/ 
+        /*else if (0 == strncmp("!file", buf, 5)) 
         {
-            logoff(p);
-            close(ns);
-            break;
-        }
-        else if (0 == strcmp("!list\n", buf)) /*receives 'list' command*/ 
-        {
-            list(buf);
-            if(send(ns, buf, strlen(buf), 0) < 0)
+            if ((buf[0] = trans_file(buf, ns, username)) != '\0') 
             {
-                perror("send");
-                exit(1);
-            }
-        }
-        else if (0 == strncmp(">>", buf, 2)) /*receives 'talk' command*/ 
-        {
-            if ((buf[0] = talk(buf, p->username)) != '\0') /*failed*/ 
-            {
-                if (send(ns, buf, 1, 0) < 0) /*send a single byte*/
+                if (send(ns, buf, 1, 0) < 0) 
                 {
                     perror("send");
                     exit(1);
                 }
             }
-        }
-        else if (0 == strncmp("!file", buf, 5)) /*receives 'file' command*/ 
-        {
-            if ((buf[0] = trans_file(buf, ns, username)) != '\0') /*failed*/ 
-            {
-                if (send(ns, buf, 1, 0) < 0) /*send a single byte*/
-                {
-                    perror("send");
-                    exit(1);
-                }
-            }
-        }
+        }*/
         memset(buf, 0, sizeof(buf));
     }
 }
@@ -269,11 +191,11 @@ void serverd(int ns)
  *
  * @return error code
  */
-char trans_file(char buf[], int socket_sender, char src[])
+/*char trans_file(char buf[], int socket_sender, char src[])
 {
     char username[USERNAME_LEN], path[PATH];
     int len;
-    struct user *receiver = NULL;
+    user *receiver = NULL;
     char file_buf[FILE_SIZE];
 
     len = strlen(buf);
@@ -284,10 +206,10 @@ char trans_file(char buf[], int socket_sender, char src[])
     extract_path(path, buf);
     extract_username(username, buf);
 
-    receiver = find_by_username(username); /*finding target user*/ 
+    receiver = find_by_username(username);
     if (NULL == receiver)
     {
-        return NOT_EXIST; /*user not found*/ 
+        return NOT_EXIST;
     }
     else if(OFFLINE == receiver->status)
     {
@@ -295,74 +217,54 @@ char trans_file(char buf[], int socket_sender, char src[])
     }
 
     buf[0] = FILE_RCV;
-    if(send(receiver->socket, buf, 1, 0) < 0) /*send 1-byte signal to receiver*/ 
+    if(send(receiver->socket, buf, 1, 0) < 0)
     {
         perror("send");
         exit(1);
     }
 
-    if (send(receiver->socket, path, strlen(path), 0) < 0) /*send path to receiver*/ 
+    if (send(receiver->socket, path, strlen(path), 0) < 0)
     {
         perror("send");
         exit(1);
     }
-    if ((len = recv(socket_sender, file_buf, sizeof(file_buf), 0)) > 0) /*receive the file from sender*/ 
+    if ((len = recv(socket_sender, file_buf, sizeof(file_buf), 0)) > 0)
     {
-        if (send(receiver->socket, file_buf, len, 0) < 0) /*send file to receiver*/ 
+        if (send(receiver->socket, file_buf, len, 0) < 0)
         {
             perror("send");
             exit(1);
         }
     }
     return '\0';
-}
+}*/
 
 /**
  * @brief executes when users talk
  *
  * @param buf[] contents
- * @param src[] sender's username
  *
  * @return error code
  */
-char talk(char buf[], const char src[])
+void talk(char buf[], int socket)
 {
-    char username[USERNAME_LEN];
+    char target_username[USERNAME_LEN];
+    char message[MSG];
     int i;
-    struct user *p = NULL;
-    char buf_send[BUF] = "*** ";
+    user *p = NULL;
 
-    memset(username, 0, sizeof(username));
-    for (i = 0; ; i++)
-    {
-        if (':' == buf[i + 2])
-        {
-            break;
-        }
-        else if (USERNAME_LEN == i) /*username too long*/ 
-        {
-            return TOO_LONG;
-        }
-        username[i] = buf[i + 2]; /*'buf' begins with '>>'*/ 
-    } /*extract target username*/ 
-    p = find_by_username(username); /*finding target socket*/ 
-    if (NULL == p)
-    {
-        return NOT_EXIST; /*user not found*/ 
-    }
-    else if(OFFLINE == p->status)
-    {
-        return TAR_OFFLINE;
-    } /*extract target socket*/ 
+    extract_username(target_username, buf);
+    p = find_by_username(target_username);
+    extract_second(message, buf);
+    encap_msg(buf, TALK, target_username, message);
 
-    strcat(buf_send, src);
-    strcat(buf_send, buf + i + 2);
-    if(send(p->socket, buf_send, strlen(buf_send), 0) < 0)
-    {
-        perror("send");
-        exit(1);
+    if(send(p->socket, buf, strlen(buf), 0) < 0) {
+        buf[0] = TALK_NO;
     }
-    return '\0';
+    else {
+        buf[0] = TALK_YES;
+    }
+    send(socket, buf, 1, 0);
 }
 
 int main()
@@ -421,3 +323,49 @@ int main()
     close(main_socket);
     return 0;
 }
+
+void login(char buf[], int ns)
+{
+    char username[USERNAME_LEN], password[PASSWORD_LEN];
+    user *p = NULL;
+
+    extract_username(username, buf);
+    extract_second(password, buf);
+
+    p = find_by_username(username);
+    if (NULL == p) { /*user not found*/
+        buf[0] = NOT_EXIST;
+    }
+    else {
+        buf[0] = validate(p, password, ns);
+    }
+    send(ns, buf, 1, 0);
+    broadcast(BROADCAST_JOIN, p);
+}
+
+void append_usr(char buf[], int ns)
+{
+    char username[USERNAME_LEN], password[PASSWORD_LEN];
+    user *p = NULL;
+    extern user ls[];
+    extern int user_count;
+
+    extract_username(username, buf);
+    extract_second(password, buf);
+
+    p = find_by_username(username);
+    if (NULL != p) { /*user found already exist*/
+        buf[0] = ALREADY_EXIST;
+    }
+    else {
+        ls[user_count].status = OFFLINE;
+        ls[user_count].socket = -1;
+        strcpy(ls[user_count].username, username);
+        strcpy(ls[user_count].password, password);
+        user_count++;
+        buf[0] = REGISTER_YES;
+    }
+
+    send(ns, buf, 1, 0);
+}
+

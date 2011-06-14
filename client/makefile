@@ -1,5 +1,5 @@
 network: client.o sockets.o
-	gcc -g -lpthread client.o sockets.o -o im_cli
+	gcc -g -lpthread client.o sockets.o -o client
 client.o: client.c client.h
 	gcc -g -c client.c
 sockets.o: sockets.c sockets.h

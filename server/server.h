@@ -18,10 +18,6 @@
 
 #include "sockets.h"
 
-#define USER_CNT 6
-#define JOIN 0
-#define DEPARTURE 1
-
 /*
  *global variables
  */
@@ -43,12 +39,13 @@ user ls[] = {"Haibara", "the", OFFLINE, -1,
 
 int user_count = 6;
 
-int append_usr(const char username[], const char password[]);
-struct user * find_by_username(const char username[]);
-char validate(struct user *p, char password[], int ns);
-void logoff(struct user *p);
-void list(char buf[]);
-void broadcast(int flag, struct user *p);
+user * find_by_username(const char username[]);
+void append_usr(char buf[], int ns);
+void login(char buf[], int ns);
+char validate(user *p, char password[], int ns);
+void logoff(user *p, int socket);
+void list(char buf[], int socket);
+void broadcast(char flag, user *p);
 void serverd(int ns);
-char trans_file(char buf[], int socket_sender, char src[]);
-char talk(char buf[], const char src[]);
+/*char trans_file(char buf[], int socket_sender, char src[]);*/
+void talk(char buf[], int socket);

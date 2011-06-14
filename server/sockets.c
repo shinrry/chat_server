@@ -20,32 +20,42 @@
 
 #include "sockets.h"
 
-void extract_path(char path[], const char buf[])
-{
-	int i, offset = 0;
-
-	memset(path, 0, sizeof(path));
-	for (i = 6; i < BUF; i++)
-	{
-		if ('=' == buf[i])
-		{
-			break;
-		}
-		path[offset++] = buf[i];
-	}
-}
-
 void extract_username(char username[], const char buf[])
 {
-	int i, offset = 0;
+    int i = 1;
 
-	memset(username, 0, sizeof(username));
-	for (i = 0; i < BUF; i++)
-	{
-		if ('>' == buf[i])
-		{
-			break;
-		}
-	}
-	strcpy(username, buf + i + 1);
+    while (1) {
+        if (buf[i] == ' ') {
+            username[i - 1] = '\0';
+            return;
+        }
+        username[i - 1] = buf[i];
+        i++;
+    }
+}
+
+void extract_second(char second[], const char buf[])
+{
+    int i = 0, offset = 0;
+
+    while (buf[offset] != ' ') {
+        offset++;
+    }
+    strcpy(second, buf + offset + 1);
+}
+
+void encap_usrname(char buf[], char op, const char username[])
+{
+    int len = strlen(username);
+
+    buf[0] = op;
+    strcpy(buf + 1, username);
+    buf[len + 1] = '\0';
+}
+
+void encap_msg(char buf[], char op, const char username[], const char msg[])
+{
+    encap_usrname(buf, op, username);
+    strcat(buf, " ");
+    strcat(buf, msg);
 }

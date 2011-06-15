@@ -52,7 +52,6 @@
 
 #define LIST 'I'
 
-
 void extract_username(char username[], const char buf[]);
 void extract_second(char second[], const char buf[]);
 void encap_usrname(char buf[], char op, const char username[]);

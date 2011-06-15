@@ -24,6 +24,7 @@ void clientd(int active_socket);
 int connect_init();
 char login(int socket, const char username[], const char password[]);
 char reg(int socket, const char username[], const char password[]);
+void list(int socket);
 
 /*
  *global varabiles

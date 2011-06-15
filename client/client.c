@@ -80,39 +80,10 @@ int connect_init()
 
     /*connect to the server.*/
     if (connect(ns, (struct sockaddr *) &name, len) < 0) {
-        perror("connect");
-        exit(1);
+        return -1;
     }
-
     return ns;
 }
-
-int main(int argc, const char *argv[])
-{
-    int n, active_socket, len;
-    char buf[BUF], message[BUF];
-    int cnt = 0;
-    pthread_t pid;
-    char tmp;
-    extern int fd;
-
-    active_socket = connect_init();
-    tmp = login(active_socket, argv[1], argv[2]);
-
-    memset(message, 0, sizeof(message));
-
-    memset(buf, 0, sizeof(buf));
-    while ((n = read(0, buf, sizeof(buf))) > 0)
-    {
-        if (send(active_socket, buf, n, 0) < 0) {
-            perror("send");
-            exit(1);
-        }
-            
-        memset(buf, 0, sizeof(buf));
-    }
-}
-
 
 char login(int socket, const char username[], const char password[])
 {
@@ -145,4 +116,12 @@ char reg(int socket, const char username[], const char password[])
     if (recv(socket, message, sizeof(message), 0) > 0) {
         return message[0];
     }
+}
+
+void list(int socket)
+{
+    char message[2];
+    message[0] = LIST;
+    message[1] = '\0';
+    send(socket, message, strlen(message), 0);
 }

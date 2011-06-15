@@ -97,18 +97,18 @@ void logoff(user *p, int socket)
  */
 void list(char buf[], int socket)
 {
-    int i, j, offset = 0;
+    int i, j, offset = 1;
     extern user ls[];
 
     memset(buf, 0, sizeof(buf));
+    buf[0] = LIST;
     for (i = 0; i < user_count; i++) {
         if(ONLINE == ls[i].status) {
-            buf[offset++] = ' ';
             for (j = 0; j < strlen(ls[i].username); j++)
             {
                 buf[offset++] = ls[i].username[j];
             }
-            buf[offset++] = '\n';
+            buf[offset++] = ':';
         }
     }
     if(send(socket, buf, strlen(buf), 0) < 0) {

@@ -44,8 +44,6 @@
 #define LOGOFF 'Q'
 
 #define TALK 'T'
-#define TALK_YES 'A'
-#define TALK_NO 't'
 
 #define BROADCAST_JOIN 'J'
 #define BROADCAST_DEP 'D'
@@ -56,3 +54,5 @@ void extract_username(char username[], const char buf[]);
 void extract_second(char second[], const char buf[]);
 void encap_usrname(char buf[], char op, const char username[]);
 void encap_msg(char buf[], char op, const char username[], const char msg[]);
+void extract_third(char third[], const char buf[]);
+void extract_middle(char middle[], const char buf[]);

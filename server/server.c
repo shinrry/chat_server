@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#include <unistd.h>
+
 #include "server.h"
 
 /*
@@ -64,15 +66,18 @@ char validate(user *p, char password[], int ns)
         {
             p->status = ONLINE;
             p->socket = ns;
+            printf("%s had logged in\n", p->username);
             return OFFLINE;
         }
         else if (ONLINE == p->status)
         {
+            printf("logged in denied: %s(already online)\n", p->username);
             return ONLINE;
         }
     }
     else /*password incorrect*/ 
     {
+        printf("logged in denied: %s(wrong password)\n", p->username);
         return WRONG_PASSWORD;
     }
 }
@@ -95,7 +100,7 @@ void logoff(user *p, int socket)
  *
  * @param buf[] result string
  */
-void list(char buf[], int socket)
+void list(char buf[], int ns)
 {
     int i, j, offset = 1;
     extern user ls[];
@@ -103,7 +108,7 @@ void list(char buf[], int socket)
     memset(buf, 0, sizeof(buf));
     buf[0] = LIST;
     for (i = 0; i < user_count; i++) {
-        if(ONLINE == ls[i].status) {
+        if(ONLINE == ls[i].status && ns != ls[i].socket) {
             for (j = 0; j < strlen(ls[i].username); j++)
             {
                 buf[offset++] = ls[i].username[j];
@@ -111,10 +116,9 @@ void list(char buf[], int socket)
             buf[offset++] = ':';
         }
     }
-    if(send(socket, buf, strlen(buf), 0) < 0) {
-        perror("send");
-        exit(1);
-    }
+    strcat(buf, "*");
+    printf("name list: %s len: %d\n", buf, strlen(buf));
+    send(ns, buf, strlen(buf), 0);
 }
 
 /**
@@ -130,8 +134,9 @@ void broadcast(char flag, user *p)
     extern user ls[];
 
     encap_usrname(message, flag, p->username);
+    strcat(message, "*");
     for (i = 0; i < user_count; i++) {
-        if(-1 != ls[i].socket) {
+        if(-1 != ls[i].socket && p->socket != ls[i].socket) {
             send(ls[i].socket, message, strlen(message), 0);
         }
     }
@@ -248,23 +253,29 @@ void serverd(int ns)
  */
 void talk(char buf[], int socket)
 {
-    char target_username[USERNAME_LEN];
+    printf("in function talk: server receives %s\n", buf);
+    char target[USERNAME_LEN];
+    char sender[USERNAME_LEN];
     char message[MSG];
     int i;
     user *p = NULL;
 
-    extract_username(target_username, buf);
-    p = find_by_username(target_username);
-    extract_second(message, buf);
-    encap_msg(buf, TALK, target_username, message);
+    extract_username(target, buf);
+    printf("target: %s\n", target);
+    p = find_by_username(target);
 
-    if(send(p->socket, buf, strlen(buf), 0) < 0) {
-        buf[0] = TALK_NO;
+    extract_middle(sender, buf);
+    extract_third(message, buf);
+    printf("sender: %s\n", sender);
+    printf("message: %s\n", message);
+
+    encap_msg(buf, TALK, sender, message);
+    strcat(buf, "*");
+
+    if (p != NULL) {
+        send(p->socket, buf, strlen(buf), 0);
+        printf("in function talk: server sends %s\n s: %d", buf, p->socket);
     }
-    else {
-        buf[0] = TALK_YES;
-    }
-    send(socket, buf, 1, 0);
 }
 
 int main()
@@ -335,6 +346,7 @@ void login(char buf[], int ns)
     p = find_by_username(username);
     if (NULL == p) { /*user not found*/
         buf[0] = NOT_EXIST;
+        printf("login denied: %s(not exist)\n", username);
     }
     else {
         buf[0] = validate(p, password, ns);

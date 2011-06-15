@@ -44,6 +44,38 @@ void extract_second(char second[], const char buf[])
     strcpy(second, buf + offset + 1);
 }
 
+void extract_middle(char middle[], const char buf[])
+{
+    int i = 0, offset = 0;
+
+    while (buf[offset] != ' ') {
+        offset++;
+    }
+    strcpy(middle, buf + offset + 1);
+    for (i = 0; i < strlen(middle); i++) {
+        if (middle[i] == ' ') {
+            middle[i] = '\0';
+            break;
+        }
+    }
+}
+
+
+void extract_third(char third[], const char buf[])
+{
+    int i = 0, offset = 0;
+
+    while (buf[offset] != ' ') {
+        offset++;
+    }
+    offset++;
+    while (buf[offset] != ' ') {
+        offset++;
+    }
+
+    strcpy(third, buf + offset + 1);
+}
+
 void encap_usrname(char buf[], char op, const char username[])
 {
     int len = strlen(username);

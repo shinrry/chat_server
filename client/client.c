@@ -135,3 +135,14 @@ void talk(int socket, const char target_username[], const char content[])
     encap_msg(message, TALK, target_username, content);
     send(socket, message, strlen(message), 0);
 }
+
+char reg(int socket, const char username[], const char password[])
+{
+    char message[MSG];
+
+    encap_msg(message, REGISTER, username, password);
+    send(socket, message, strlen(message), 0);
+    if (recv(socket, message, sizeof(message), 0) > 0) {
+        return message[0];
+    }
+}

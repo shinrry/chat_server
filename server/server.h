@@ -18,6 +18,8 @@
 
 #include "sockets.h"
 
+#define USER_MAX 100
+
 /*
  *global variables
  */
@@ -30,7 +32,7 @@ typedef struct
 	int socket;
 } user; 
 
-user ls[] = {"Haibara", "the", OFFLINE, -1,
+user ls[USER_MAX] = {"Haibara", "the", OFFLINE, -1,
 	"Conan", "quick", OFFLINE, -1,
 	"Sonoko", "brown", OFFLINE, -1,
 	"Kogoro", "fox", OFFLINE, -1,
